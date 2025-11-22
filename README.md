@@ -7,3 +7,5 @@ Resources used:
 2. Blynk
 3. EasyEda
 4. Hardware Electronics
+
+if not able to view document, please download the zip file and review the documents
