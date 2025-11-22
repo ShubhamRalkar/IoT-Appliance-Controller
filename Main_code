@@ -1,0 +1,75 @@
+#Code for the fa dimmer circuit
+
+#define BLYNK_PRINT Serial                                                             //template ID,template name, Authentication token is
+#define BLYNK_TEMPLATE_ID "TMPL3op_HNtf0"                                              // taken from Blynk website, these are useful for connections
+#define BLYNK_TEMPLATE_NAME "Fan IOT"
+#define BLYNK_AUTH_TOKEN "XixVaFjFvuAFRr9JM6DYQ47Edqica5f2"
+#include <ESP8266WiFi.h>                                                                // libraries used for ESP8266 and wifi
+#include <BlynkSimpleEsp8266.h>
+#define outputPin D5                                                                    //D5 is GPIO14  defining the pins and their connections on esp8266
+#define zerocross D2                                                                    //D2 is GPIO4
+char ssid[] = "Home";                                                                  //The Wifi credentials of wifi the esp8266 will connect to
+char pass[] = "00000000";
+unsigned int value;                                                                    //declaring variables or taking in the value from app, delay
+long int delay;
+
+void ICACHE_RAM_ATTR angle(){                                                          //this function is for creation of PWM-like pulse,
+delay = map(value, 0, 900,10000,0 );
+delayMicroseconds(delay);
+digitalWrite(outputPin,HIGH);
+delayMicroseconds(125);
+digitalWrite(outputPin,LOW);
+}
+
+void setup()                                                                           //setting up the pinModes,serial communication, wifi
+{
+Serial.begin(115200);
+Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+pinMode(outputPin,OUTPUT);
+pinMode(zerocross,INPUT);
+attachInterrupt(digitalPinToInterrupt(4),angle, FALLING);                             //This attachInterrupt is assigned to pin IO4(D2) on ESP8266
+}
+
+BLYNK_WRITE(V0)                                                                      //This function getts called whenever there is data sent from app.
+{
+value = param.asInt();                                                               // Get value as integer
+// The param can contain multiple values, in such case:
+//outVal = map(value, 0, 1000, 0,10000 );
+//Serial.println(outVal);
+}
+void loop()                                                                          // this function has only one command, which ensures connection
+{
+Blynk.run();
+}
+
+/*
+Code Explaination:
+We start by declaring template Id, template name, authentication token received from the blynk website. Libraries are declared.
+Pins and variables are defined.
+
+for Variables: "value" is unsigned int as the data passed from the website/app will be positive in value.
+"delay" is long int becoz, it is in microseconds to describe microseconds, large numbers are needed.
+for Wifi: The name and password of the wifi connection to which the esp8266 will be connecting is mentioned.
+
+"angle" function :
+This is function declaration.
+this function is called whenver there is interrupt at "zerocross" pin.
+Use of this function is to turn on and turn off the triac BT136. Which controls AC supply.
+this function first determines the "delay", by using map() function.
+mapping is done between values recieved and values used in code.
+after zerocrossing, it waits for time (delay). Turns on the traic for dpecific period say 100,150 Microseconds.
+Note :the period of 100, 150 Microseconds is decided after going thru tutorials and testing! can be changed.
+triac is turned on and off after a delay,to prevent full AC wave to go through,so the delay at first(startingofwave)
+ensures that not all portion of AC wave goes through. This will give us dimming effect. Thats why this function is c called everytime the AC wave starts(zerocrosses).
+void setup : This function sets everything up. Which pin is OUTPUT,INPUT so on.
+The wifi to connect is fixed here.
+attachInterrupt(pin,function,FALLING)--> this is specified to a pin, triggers a function everytime it goes from
+HIGH to LOW.
+So,everytime there is zero Cross, pin IO4 goes HIGH to LOW and angle() function is called.
+BLYNK_WRITE(V0) : this function runs everytime a value is passed from app/website to the esp8266. Here V0 is the virtual pin
+which is the datastream given on website.
+void loop : It has Blynk.run() function which ensures connection with the blynk app and website. It is the only function in loop as adding any other command in loop 
+would interfere in the connection. this is the reason, it is suggested to keep the void loop, very minimal.
+Further steps:
+this code runs fine with dimming light(incandesent) and fan(some changes in delay are required).
+*/
